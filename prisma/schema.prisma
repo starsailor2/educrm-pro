@@ -1,0 +1,348 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String    @default("COUNSELOR")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts         Account[]
+  sessions         Session[]
+  assignedStudents Student[] @relation("CounselorStudents")
+  sentMessages     Message[]
+  notes            Note[]
+  tasks            Task[]
+  nudgeLogs        NudgeLog[]
+  contracts        Contract[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Student {
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  phone          String?
+  whatsapp       String?
+  dateOfBirth    DateTime?
+  nationality    String?
+  passportNumber String?
+  passportExpiry DateTime?
+
+  stage           String @default("INQUIRY")
+  leadScore       Int    @default(0)
+  leadTemperature String @default("COLD")
+  source          String?
+
+  highestQualification String?
+  gradePercentage      Float?
+  englishScore         String?
+  englishScoreValue    Float?
+
+  destinationCountries String?
+  preferredCourses     String?
+  budget               Float?
+  intakeMonth          String?
+  intakeYear           Int?
+
+  counselorId String?
+  counselor   User?   @relation("CounselorStudents", fields: [counselorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  applications   Application[]
+  documents      Document[]
+  conversations  Conversation[]
+  notes          Note[]
+  milestones     Milestone[]
+  financeRecords FinanceRecord[]
+  nudgeLogs      NudgeLog[]
+  contracts      Contract[]
+  calendarEvents CalendarEvent[]
+  notifications  Notification[]
+  tasks          Task[]
+}
+
+model Application {
+  id         String  @id @default(cuid())
+  studentId  String
+  student    Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  university     String
+  course         String
+  country        String
+  intake         String
+  tuitionFee     Float?
+  applicationFee Float?
+  status         String    @default("PREPARING")
+  offerExpiry    DateTime?
+  offerDocument  String?
+  requirements   String?
+  notes          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Document {
+  id        String  @id @default(cuid())
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  name     String
+  type     String
+  fileUrl  String
+  fileSize Int?
+  mimeType String?
+  status   String  @default("PENDING")
+
+  ocrData        String?
+  extractedName  String?
+  extractedDob   DateTime?
+  extractedExpiry DateTime?
+  extractedGrades String?
+  extractedScores String?
+  isExpiringSoon  Boolean  @default(false)
+
+  rejectionReason String?
+  uploadedAt      DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Conversation {
+  id        String  @id @default(cuid())
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  channel  String
+  isRead   Boolean @default(false)
+  priority String  @default("NORMAL")
+
+  messages  Message[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  senderId   String?
+  sender     User?   @relation(fields: [senderId], references: [id])
+  senderType String
+
+  content     String
+  attachments String?
+  isRead      Boolean  @default(false)
+  sentAt      DateTime @default(now())
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model AutomationRule {
+  id       String  @id @default(cuid())
+  name     String
+  isActive Boolean @default(true)
+
+  triggerType String
+  condition   String
+  delay       Int    @default(0)
+
+  actionType String
+  actionData String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  nudgeLogs NudgeLog[]
+}
+
+model NudgeLog {
+  id        String         @id @default(cuid())
+  studentId String
+  student   Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  ruleId    String
+  rule      AutomationRule @relation(fields: [ruleId], references: [id])
+
+  triggeredBy     String?
+  triggeredByUser User?   @relation(fields: [triggeredBy], references: [id])
+
+  channel String
+  message String
+  status  String   @default("SENT")
+  firedAt DateTime @default(now())
+}
+
+model Milestone {
+  id        String  @id @default(cuid())
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  title    String
+  type     String
+  date     DateTime
+  notes    String?
+
+  alertDays        String  @default("[7, 3, 0]")
+  notifyStudent    Boolean @default(true)
+  notifyParent     Boolean @default(false)
+  notifyCounselor  Boolean @default(true)
+  parentEmail      String?
+  parentPhone      String?
+  isCompleted      Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FinanceRecord {
+  id        String  @id @default(cuid())
+  studentId String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  type          String
+  amount        Float
+  currency      String   @default("USD")
+  description   String
+  status        String   @default("PENDING")
+  invoiceNumber String?  @unique
+  dueDate       DateTime?
+  paidDate      DateTime?
+  paymentMethod String?
+
+  commissionRate   Float?
+  commissionAmount Float?
+  pdfUrl           String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CalendarEvent {
+  id          String  @id @default(cuid())
+  title       String
+  type        String
+  date        DateTime
+  description String?
+
+  studentId  String?
+  student    Student? @relation(fields: [studentId], references: [id])
+  university String?
+  country    String?
+  course     String?
+  urgency    String   @default("GREEN")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Contract {
+  id          String  @id @default(cuid())
+  studentId   String
+  student     Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  counselorId String
+  counselor   User    @relation(fields: [counselorId], references: [id])
+
+  title   String
+  type    String
+  content String
+  status  String @default("PENDING")
+
+  studentSignature   String?
+  counselorSignature String?
+  studentSignedAt    DateTime?
+  counselorSignedAt  DateTime?
+  studentSignedIp    String?
+  counselorSignedIp  String?
+
+  pdfUrl    String?
+  expiresAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  studentId String?
+  student   Student? @relation(fields: [studentId], references: [id])
+
+  title   String
+  message String
+  type    String
+  isRead  Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  studentId   String?
+  student     Student? @relation(fields: [studentId], references: [id])
+  assigneeId  String?
+  assignee    User?    @relation(fields: [assigneeId], references: [id])
+
+  status   String    @default("PENDING")
+  priority String    @default("NORMAL")
+  dueDate  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
