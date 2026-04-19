@@ -1,26 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { MOCK_STUDENTS } from "@/lib/mock-data";
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
-  const search = searchParams.get("search") ?? "";
+  const search = searchParams.get("search")?.toLowerCase() ?? "";
   const stage = searchParams.get("stage") ?? "";
   const temp = searchParams.get("temp") ?? "";
 
-  const students = await prisma.student.findMany({
-    where: {
-      ...(search ? { OR: [{ name: { contains: search } }, { email: { contains: search } }] } : {}),
-      ...(stage ? { stage } : {}),
-      ...(temp ? { leadTemperature: temp } : {}),
-    },
-    include: { counselor: { select: { name: true } }, _count: { select: { applications: true, documents: true } } },
-    orderBy: { updatedAt: "desc" },
-  });
+  let students = MOCK_STUDENTS;
+  if (search) students = students.filter((s) => s.name.toLowerCase().includes(search) || s.email.toLowerCase().includes(search));
+  if (stage) students = students.filter((s) => s.stage === stage);
+  if (temp) students = students.filter((s) => s.leadTemperature === temp);
 
   return NextResponse.json(students);
 }
@@ -28,8 +23,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   const body = await req.json();
-  const student = await prisma.student.create({ data: body });
-  return NextResponse.json(student, { status: 201 });
+  const newStudent = { ...body, id: `s${Date.now()}`, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), counselor: null, _count: { applications: 0, documents: 0 } };
+  return NextResponse.json(newStudent, { status: 201 });
 }
