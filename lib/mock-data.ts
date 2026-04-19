@@ -154,7 +154,7 @@ export const MOCK_DASHBOARD = {
   pendingTasks: 3,
 };
 
-export const MOCK_CONVERSATIONS = MOCK_STUDENTS.flatMap((s) => s.conversations);
+export const MOCK_CONVERSATIONS: any[] = MOCK_STUDENTS.flatMap((s) => s.conversations);
 
 export const MOCK_MESSAGES: Record<string, any[]> = {
   c1: [
@@ -166,11 +166,12 @@ export const MOCK_MESSAGES: Record<string, any[]> = {
   ],
 };
 
-export const MOCK_DOCUMENTS = MOCK_STUDENTS.flatMap((s) =>
+export const MOCK_DOCUMENTS: any[] = MOCK_STUDENTS.flatMap((s) =>
   s.documents.map((d) => ({ ...d, student: { name: s.name } }))
 );
 
-export const MOCK_FINANCE = MOCK_STUDENTS.flatMap((s) => s.financeRecords);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const MOCK_FINANCE: any[] = (MOCK_STUDENTS as any[]).flatMap((s) => s.financeRecords);
 
 export const MOCK_MILESTONES = [
   { id: "m1", studentId: "s1", title: "Visa Application Deadline", date: "2025-06-01T00:00:00Z", alertDays: 7, student: { name: "Aarav Sharma" } },
@@ -195,4 +196,4 @@ export const MOCK_AUTOMATION_LOGS = [
   { id: "l3", studentId: "s6", ruleId: "r2", status: "SENT", triggeredAt: "2025-03-19T08:00:00Z", student: { name: "Meera Joshi" }, rule: { name: "Inactive Student Nudge" } },
 ];
 
-export const MOCK_CONTRACTS = MOCK_STUDENTS.flatMap((s) => s.contracts);
+export const MOCK_CONTRACTS: any[] = MOCK_STUDENTS.flatMap((s) => s.contracts);
