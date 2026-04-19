@@ -3,8 +3,8 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 
 const DEMO_USERS = [
-  { id: "u1", name: "Admin User", email: "admin@educrm.pro", role: "ADMIN", passwordHash: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi" }, // admin123
-  { id: "u2", name: "Counselor User", email: "counselor@educrm.pro", role: "COUNSELOR", passwordHash: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi" }, // admin123
+  { id: "u1", name: "Admin User", email: "admin@educrm.pro", role: "ADMIN", passwordHash: "$2b$10$rsQGtbHUVwoQfjDj/Qvp6O2wP2H5kX6FOeazuyBilGmD8S9j3nIlS" }, // admin123
+  { id: "u2", name: "Counselor User", email: "counselor@educrm.pro", role: "COUNSELOR", passwordHash: "$2b$10$KnZbiRm7EtnvxzYjENMxzepOb.Mkw6bjm3o7IthJowBYYyKZX14i." }, // counselor123
 ];
 
 export const authOptions: NextAuthOptions = {
