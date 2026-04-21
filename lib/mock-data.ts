@@ -69,7 +69,10 @@ export const MOCK_STUDENTS = [
     counselor: { id: "u2", name: "Counselor User", email: "counselor@educrm.pro" },
     _count: { applications: 2, documents: 4 },
     applications: [],
-    documents: [],
+    documents: [
+      { id: "d4", studentId: "s3", name: "Passport", type: "PASSPORT", status: "PENDING_REVIEW", uploadedAt: "2025-03-10T00:00:00Z", fileUrl: "#" },
+      { id: "d5", studentId: "s3", name: "PTE Score Card", type: "ENGLISH_TEST", status: "PENDING", uploadedAt: "2025-03-15T00:00:00Z", fileUrl: "#" },
+    ],
     notes: [
       { id: "n2", studentId: "s3", content: "Exploring Melbourne and Sydney universities.", createdAt: "2025-02-15T00:00:00Z", author: { name: "Counselor User" } },
     ],
@@ -90,7 +93,10 @@ export const MOCK_STUDENTS = [
     counselor: { id: "u2", name: "Counselor User", email: "counselor@educrm.pro" },
     _count: { applications: 1, documents: 3 },
     applications: [],
-    documents: [],
+    documents: [
+      { id: "d6", studentId: "s4", name: "Transcript", type: "TRANSCRIPT", status: "PENDING", uploadedAt: "2025-03-12T00:00:00Z", fileUrl: "#" },
+      { id: "d7", studentId: "s4", name: "IELTS Certificate", type: "ENGLISH_TEST", status: "PENDING_REVIEW", uploadedAt: "2025-03-14T00:00:00Z", fileUrl: "#" },
+    ],
     notes: [],
     milestones: [],
     financeRecords: [],
@@ -194,6 +200,11 @@ export const MOCK_AUTOMATION_LOGS = [
   { id: "l1", studentId: "s1", ruleId: "r1", status: "SENT", triggeredAt: "2025-03-20T09:00:00Z", student: { name: "Aarav Sharma" }, rule: { name: "Hot Lead Follow-up" } },
   { id: "l2", studentId: "s2", ruleId: "r1", status: "SENT", triggeredAt: "2025-03-21T10:00:00Z", student: { name: "Priya Patel" }, rule: { name: "Hot Lead Follow-up" } },
   { id: "l3", studentId: "s6", ruleId: "r2", status: "SENT", triggeredAt: "2025-03-19T08:00:00Z", student: { name: "Meera Joshi" }, rule: { name: "Inactive Student Nudge" } },
+];
+
+// Manual reminders sent by counsellors (in-memory, accumulates during session)
+export const MOCK_REMINDER_LOGS: any[] = [
+  { id: "rl1", studentId: "s3", counselorId: "u2", channel: "IN_APP", templateType: "DOCUMENT_SUBMISSION", message: "Hi Rahul, please submit your passport copy by 1st April.", status: "SENT", sentAt: "2025-03-22T10:30:00Z", student: { name: "Rahul Verma" } },
 ];
 
 export const MOCK_CONTRACTS: any[] = MOCK_STUDENTS.flatMap((s) => s.contracts);

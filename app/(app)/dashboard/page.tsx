@@ -1,10 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, TrendingUp, DollarSign, ClipboardList, Flame, Thermometer, Snowflake } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
+import {
+  Users, TrendingUp, DollarSign, ClipboardList, Flame, Thermometer, Snowflake,
+  FileCheck, CheckCircle2, AlertTriangle
+} from "lucide-react";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell,
+} from "recharts";
+import Link from "next/link";
 
 const STAGE_LABELS: Record<string, string> = {
   INQUIRY: "Inquiry",
@@ -19,6 +27,8 @@ const STAGE_LABELS: Record<string, string> = {
 const STAGE_COLORS = ["#6366f1", "#3b82f6", "#0ea5e9", "#10b981", "#f59e0b", "#f97316", "#ef4444", "#8b5cf6"];
 
 export default function DashboardPage() {
+  const { data: session } = useSession();
+  const role = (session?.user as any)?.role;
   const [data, setData] = useState<any>(null);
 
   useEffect(() => {
@@ -38,6 +48,11 @@ export default function DashboardPage() {
     );
   }
 
+  if (role === "ADMIN") return <AdminDashboard data={data} />;
+  return <CounsellorDashboard data={data} />;
+}
+
+function AdminDashboard({ data }: { data: any }) {
   const stageData = data.stageBreakdown.map((s: any) => ({
     name: STAGE_LABELS[s.stage] ?? s.stage,
     value: s._count,
@@ -46,27 +61,34 @@ export default function DashboardPage() {
   return (
     <div className="p-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-        <p className="text-slate-500 text-sm mt-1">Overview of your consultancy pipeline</p>
+        <h1 className="text-2xl font-bold text-slate-900">Admin Dashboard</h1>
+        <p className="text-slate-500 text-sm mt-1">Organisation-wide overview</p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <KpiCard title="Total Students" value={data.totalStudents} icon={<Users className="w-5 h-5" />} color="blue" />
         <KpiCard title="Hot Leads" value={data.hotLeads} icon={<Flame className="w-5 h-5" />} color="red" sub={`${data.warmLeads} warm, ${data.coldLeads} cold`} />
-        <KpiCard title="Revenue (Paid)" value={`$${(data.revenue).toLocaleString()}`} icon={<DollarSign className="w-5 h-5" />} color="green" />
-        <KpiCard title="Pending Tasks" value={data.pendingTasks} icon={<ClipboardList className="w-5 h-5" />} color="amber" />
+        <KpiCard title="Revenue (Paid)" value={`$${data.revenue.toLocaleString()}`} icon={<DollarSign className="w-5 h-5" />} color="green" />
+        <KpiCard title="Conversion Rate" value={`${data.conversionRate ?? 0}%`} icon={<TrendingUp className="w-5 h-5" />} color="purple" sub="Inquiry → Enrolled" />
       </div>
 
-      {/* Lead Temperature */}
+      {/* Admin-specific cards */}
       <div className="grid grid-cols-3 gap-4">
         <TemperatureCard label="Hot" count={data.hotLeads} icon={<Flame className="w-6 h-6 text-red-500" />} color="bg-red-50 border-red-200" />
         <TemperatureCard label="Warm" count={data.warmLeads} icon={<Thermometer className="w-6 h-6 text-amber-500" />} color="bg-amber-50 border-amber-200" />
-        <TemperatureCard label="Cold" count={data.coldLeads} icon={<Snowflake className="w-6 h-6 text-blue-400" />} color="bg-blue-50 border-blue-200" />
+        <Link href="/documents?filter=pending_review">
+          <div className="border rounded-xl p-4 flex items-center gap-4 bg-yellow-50 border-yellow-200 cursor-pointer hover:bg-yellow-100 transition-colors">
+            <FileCheck className="w-6 h-6 text-yellow-600" />
+            <div>
+              <p className="text-2xl font-bold text-slate-800">{data.pendingReviews ?? 0}</p>
+              <p className="text-sm text-slate-500">Docs Pending Review</p>
+            </div>
+          </div>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* Stage Breakdown */}
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-slate-700">Students by Stage</CardTitle>
@@ -83,7 +105,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Pipeline Pie */}
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-slate-700">Pipeline Distribution</CardTitle>
@@ -103,6 +124,121 @@ export default function DashboardPage() {
         </Card>
       </div>
 
+      {/* Counsellor Performance Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-semibold text-slate-700">Counsellor Performance</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 text-slate-500 text-xs">
+                  <th className="text-left py-2 font-medium">Counsellor</th>
+                  <th className="text-right py-2 font-medium">Students</th>
+                  <th className="text-right py-2 font-medium">Hot Leads</th>
+                  <th className="text-right py-2 font-medium">Enrolled</th>
+                  <th className="text-right py-2 font-medium">Revenue</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(data.counsellorStats ?? []).map((c: any) => (
+                  <tr key={c.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50">
+                    <td className="py-2.5">
+                      <p className="font-medium text-slate-800">{c.name}</p>
+                      <p className="text-xs text-slate-400">{c.email}</p>
+                    </td>
+                    <td className="text-right py-2.5 text-slate-700">{c.totalStudents}</td>
+                    <td className="text-right py-2.5">
+                      <span className="text-red-600 font-medium">{c.hotLeads}</span>
+                    </td>
+                    <td className="text-right py-2.5">
+                      <span className="text-green-600 font-medium">{c.enrolled}</span>
+                    </td>
+                    <td className="text-right py-2.5 text-slate-700">${c.revenue.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function CounsellorDashboard({ data }: { data: any }) {
+  const stageData = data.stageBreakdown.map((s: any) => ({
+    name: STAGE_LABELS[s.stage] ?? s.stage,
+    value: s._count,
+  }));
+
+  return (
+    <div className="p-8 space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900">My Dashboard</h1>
+        <p className="text-slate-500 text-sm mt-1">Your students and follow-ups</p>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <KpiCard title="My Students" value={data.totalStudents} icon={<Users className="w-5 h-5" />} color="blue" />
+        <KpiCard title="Hot Leads" value={data.hotLeads} icon={<Flame className="w-5 h-5" />} color="red" sub={`${data.warmLeads} warm, ${data.coldLeads} cold`} />
+        <KpiCard title="Revenue (Paid)" value={`$${data.revenue.toLocaleString()}`} icon={<DollarSign className="w-5 h-5" />} color="green" />
+        <KpiCard title="Pending Tasks" value={data.pendingTasks} icon={<ClipboardList className="w-5 h-5" />} color="amber" />
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* Stage chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold text-slate-700">My Students by Stage</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={stageData}>
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                <Tooltip cursor={false} />
+                <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Today's follow-ups */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold text-slate-700">Priority Follow-ups</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {(data.followUps ?? []).length === 0 ? (
+              <div className="flex items-center gap-2 text-slate-400 text-sm py-6 justify-center">
+                <CheckCircle2 className="w-4 h-4" />
+                No urgent follow-ups today
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {(data.followUps ?? []).map((s: any) => (
+                  <Link key={s.id} href={`/students/${s.id}`}>
+                    <div className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0 hover:bg-slate-50 rounded px-1 cursor-pointer">
+                      <div>
+                        <p className="text-sm font-medium text-slate-800">{s.name}</p>
+                        <p className="text-xs text-slate-500">{s.email}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <TempBadge temp={s.leadTemperature} />
+                        <Badge variant="outline" className="text-xs">{STAGE_LABELS[s.stage] ?? s.stage}</Badge>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Recent Students */}
       <Card>
         <CardHeader>
@@ -111,16 +247,18 @@ export default function DashboardPage() {
         <CardContent>
           <div className="space-y-3">
             {data.recentStudents.map((s: any) => (
-              <div key={s.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
-                <div>
-                  <p className="text-sm font-medium text-slate-800">{s.name}</p>
-                  <p className="text-xs text-slate-500">{s.email} · {s.counselor?.name ?? "Unassigned"}</p>
+              <Link key={s.id} href={`/students/${s.id}`}>
+                <div className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0 hover:bg-slate-50 rounded px-1 cursor-pointer">
+                  <div>
+                    <p className="text-sm font-medium text-slate-800">{s.name}</p>
+                    <p className="text-xs text-slate-500">{s.email}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <TempBadge temp={s.leadTemperature} />
+                    <Badge variant="outline" className="text-xs">{STAGE_LABELS[s.stage] ?? s.stage}</Badge>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <TempBadge temp={s.leadTemperature} />
-                  <Badge variant="outline" className="text-xs">{STAGE_LABELS[s.stage] ?? s.stage}</Badge>
-                </div>
-              </div>
+              </Link>
             ))}
           </div>
         </CardContent>
@@ -135,6 +273,7 @@ function KpiCard({ title, value, icon, color, sub }: { title: string; value: any
     red: "bg-red-100 text-red-600",
     green: "bg-green-100 text-green-600",
     amber: "bg-amber-100 text-amber-600",
+    purple: "bg-purple-100 text-purple-600",
   };
   return (
     <Card>

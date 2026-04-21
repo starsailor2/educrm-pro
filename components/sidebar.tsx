@@ -5,22 +5,32 @@ import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard, Users, MessageSquare, Brain, Zap, FileText,
+  LayoutDashboard, Users, MessageSquare, Zap, FileText,
   Sparkles, DollarSign, Calendar, PenLine, UserCircle, LogOut,
-  GraduationCap, Bell
+  GraduationCap, Bell, UserCog
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
-const nav = [
+const adminNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/students", label: "Students", icon: Users },
-  { href: "/inbox", label: "Inbox", icon: MessageSquare, badge: "3" },
-  { href: "/ai-assistant", label: "AI Assistant", icon: Sparkles },
-  { href: "/automation", label: "Automation", icon: Zap },
   { href: "/documents", label: "Documents", icon: FileText },
   { href: "/finance", label: "Finance", icon: DollarSign },
+  { href: "/automation", label: "Automation", icon: Zap },
+  { href: "/calendar", label: "Calendar", icon: Calendar },
+  { href: "/contracts", label: "Contracts", icon: PenLine },
+  { href: "/counsellors", label: "Counsellors", icon: UserCog },
+];
+
+const counsellorNav = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/students", label: "My Students", icon: Users },
+  { href: "/inbox", label: "Inbox", icon: MessageSquare, badge: "3" },
+  { href: "/reminders", label: "Reminders", icon: Bell },
+  { href: "/ai-assistant", label: "AI Assistant", icon: Sparkles },
+  { href: "/documents", label: "Documents", icon: FileText },
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/contracts", label: "Contracts", icon: PenLine },
   { href: "/portal", label: "Student Portal", icon: UserCircle },
@@ -29,6 +39,8 @@ const nav = [
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const role = (session?.user as any)?.role;
+  const nav = role === "ADMIN" ? adminNav : counsellorNav;
 
   return (
     <aside className="w-64 bg-slate-900 text-white flex flex-col h-screen sticky top-0">
